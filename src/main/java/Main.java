@@ -14,6 +14,26 @@ void main(String[] args) {
                 System.err.println("Logs from your program will appear here!");
                 IO.println("database page size: " + databaseFile.getDatabaseHeader().getPageSize());
                 IO.println("number of tables: " + databaseFile.getBtreePageHeader().getNumberOfCells());
+                for (TableBtreeCell cell: databaseFile.getCells()) {
+                    for (Object object : cell.getRecord().getRecordBody().getBody()) {
+                        if (object instanceof String) {
+                            System.out.print(object);
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                IO.println("Error reading file: " + e.getMessage());
+            }
+        }
+        case ".tables" -> {
+            try {
+                DatabaseFile databaseFile = Parser.parseFile(databaseFilePath);
+                for (TableBtreeCell cell: databaseFile.getCells()) {
+                    Object object = cell.getRecord().getRecordBody().getBody().get(1);
+                    if (object instanceof String) {
+                        System.out.print(object + " ");
+                    }
+                }
             } catch (IOException e) {
                 IO.println("Error reading file: " + e.getMessage());
             }
