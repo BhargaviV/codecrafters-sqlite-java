@@ -3,6 +3,7 @@ package schemareader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import utils.Parser;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,24 +35,7 @@ public class DatabaseFile {
         the beginning of the first cell is the unallocated region.
          */
 
-        List<Integer> cellOffsets = new ArrayList<>();
-        for (int i = 0; i < btreePageHeader.getNumberOfCells(); i ++) {
-            int cellOffset = ByteBuffer.wrap(databaseFileStream.readNBytes(2)).getShort() & 0xFFFF;
-            cellOffsets.add(cellOffset);
-        }
-
-        long pageStart = 0;
-        List<TableBtreeCell> tableBtreeCells = new ArrayList<>();
-        for (Integer cellOffset: cellOffsets) {
-            long absoluteCellOffset = pageStart + cellOffset;
-            System.err.println(
-                    "cellOffset=" + cellOffset +
-                            ", absolute=" + absoluteCellOffset
-            );
-            databaseFileStream.getChannel().position(absoluteCellOffset);
-            tableBtreeCells.add(TableBtreeCell.parse(databaseFileStream));
-        }
-        databaseFile.setCells(tableBtreeCells);
+        databaseFile.setCells(Parser.parseBtreeLeaf(databaseFileStream, btreePageHeader, 0, 0));
         return databaseFile;
     }
 }

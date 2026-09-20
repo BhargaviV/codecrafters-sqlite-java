@@ -42,6 +42,29 @@ public class Parser {
         throw new IllegalStateException("Invalid SQLite varint");
     }
 
+    public static List<TableBtreeCell> parseBtreeLeaf(FileInputStream databaseFileStream, BtreePageHeader btreePageHeader,
+                                                      int pageNumber,
+                                                      int pageSize) throws IOException {
+        List<Integer> cellOffsets = new ArrayList<>();
+        for (int i = 0; i < btreePageHeader.getNumberOfCells(); i ++) {
+            int cellOffset = ByteBuffer.wrap(databaseFileStream.readNBytes(2)).getShort() & 0xFFFF;
+            cellOffsets.add(cellOffset);
+        }
+
+        long pageOffset = (pageNumber - 1L) * pageSize;
+        List<TableBtreeCell> tableBtreeCells = new ArrayList<>();
+        for (Integer cellOffset: cellOffsets) {
+            long absoluteCellOffset = pageOffset + cellOffset;
+            System.err.println(
+                    "cellOffset=" + cellOffset +
+                            ", absolute=" + absoluteCellOffset
+            );
+            databaseFileStream.getChannel().position(absoluteCellOffset);
+            tableBtreeCells.add(TableBtreeCell.parse(databaseFileStream));
+        }
+        return tableBtreeCells;
+    }
+
     public static List<SchemaTable> covertCellsToSchemaTable(DatabaseFile databaseFile) {
         List<SchemaTable> tables = new ArrayList<>();
         for (TableBtreeCell cell: databaseFile.getCells()) {
@@ -76,6 +99,43 @@ public class Parser {
         }
         count += countRowsOnPage(databaseFile, header.getRightMostPointer(), pageSize);
         return count;
+    }
+
+    static List<TableBtreeCell> traverseInteriorPage(FileInputStream databaseFile, BtreePageHeader header,
+                                                     int pageNumber, int pageSize) throws IOException {
+        List<TableBtreeCell> cells = new ArrayList<>();
+        for (int i = 0; i < header.getNumberOfCells(); i++) {
+            int cellOffset = readUnsignedShort(databaseFile);
+            long cellAbsoluteOffset = (pageNumber - 1L) * pageSize + cellOffset;
+            databaseFile.getChannel().position(cellAbsoluteOffset);
+            int leftChildPage = databaseFile.read() & 0xFF;
+            Parser.readSQLiteVarint(databaseFile); // separator rowid
+            cells.addAll(traverseRowsOnPage(databaseFile, leftChildPage, pageSize));
+        }
+        cells.addAll(traverseRowsOnPage(databaseFile, header.getRightMostPointer(), pageSize));
+        return cells;
+    }
+
+    public static List<TableBtreeCell> traverseRowsOnPage(FileInputStream databaseFile, int pageNumber, int pageSize) throws IOException {
+        long pageOffset = (pageNumber - 1L) * pageSize;
+        databaseFile.getChannel().position(pageOffset);
+        BtreePageHeader header = BtreePageHeader.parse(databaseFile);
+        System.err.println("header" + header);
+        if (header.getBtreePageType() == PageType.TABLE_LEAF) {
+            List<TableBtreeCell> cells = parseBtreeLeaf(databaseFile, header, pageNumber, pageSize);
+            System.err.println("traverseRowsOnPage" + cells);
+            System.err.println("traverseRowsOnPage totalsize" + cells.size());
+            return cells;
+        }
+
+        if (header.getBtreePageType() == PageType.TABLE_INTERNAL) {
+            List<TableBtreeCell> tableBtreeCells = new ArrayList<>(traverseInteriorPage(databaseFile, header, pageNumber, pageSize));
+            return tableBtreeCells;
+        }
+
+        throw new IllegalStateException(
+                "Unexpected table B-tree page type: " + header.getBtreePageType()
+        );
     }
 
     public static long countRowsOnPage(FileInputStream databaseFile, int pageNumber, int pageSize) throws IOException {

@@ -2,7 +2,6 @@ import parser.QueryParser;
 import schemareader.SchemaTable;
 import utils.Parser;
 import schemareader.DatabaseFile;
-import schemareader.TableBtreeCell;
 
 void main(String[] args) throws Exception {
     if (args.length < 2) {
