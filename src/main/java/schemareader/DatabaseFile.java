@@ -1,3 +1,5 @@
+package schemareader;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -42,7 +44,7 @@ public class DatabaseFile {
         List<TableBtreeCell> tableBtreeCells = new ArrayList<>();
         for (Integer cellOffset: cellOffsets) {
             long absoluteCellOffset = pageStart + cellOffset;
-            System.out.println(
+            System.err.println(
                     "cellOffset=" + cellOffset +
                             ", absolute=" + absoluteCellOffset
             );

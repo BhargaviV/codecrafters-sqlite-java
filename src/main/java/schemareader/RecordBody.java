@@ -1,3 +1,5 @@
+package schemareader;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -25,8 +27,9 @@ public class RecordBody {
             // Later add other types
             if (serialTypeRecord.getSerialType().equals(SerialTypeRecord.SerialType.STRING)) {
                 String s = StandardCharsets.UTF_8.decode(byteBuffer).toString();
-                System.out.println("Table names " + s);
                 objects.add(s);
+            } else if (serialTypeRecord.getSerialType().equals(SerialTypeRecord.SerialType.INT_8)) {
+                objects.add((int) byteBuffer.get());
             }
         }
         recordBody.setBody(objects);

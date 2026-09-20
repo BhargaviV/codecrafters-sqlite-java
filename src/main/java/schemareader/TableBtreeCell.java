@@ -1,6 +1,9 @@
+package schemareader;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import utils.Parser;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -23,11 +26,11 @@ public class TableBtreeCell {
 
     public static TableBtreeCell parse(FileInputStream databaseFile) throws IOException {
         TableBtreeCell tableBtreeCell = new TableBtreeCell();
-        System.out.println("TableBtreeCell.parse");
+//        System.out.println("schemareader.TableBtreeCell.parse");
         tableBtreeCell.setRecordSize(Parser.readSQLiteVarint(databaseFile));
         tableBtreeCell.setRowId(Parser.readSQLiteVarint(databaseFile));
         tableBtreeCell.setRecord(Record.parse(databaseFile));
-        System.out.println("TableBtreeCell.parse" +  tableBtreeCell);
+//        System.out.println("schemareader.TableBtreeCell.parse" +  tableBtreeCell);
         return tableBtreeCell;
     }
 }

@@ -1,6 +1,9 @@
+package schemareader;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
+import utils.Parser;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,14 +47,17 @@ public class SerialTypeRecord {
             case 0 -> {
                 return SerialType.NULL;
             }
-            case 2 -> {
+            case 1 -> {
                 return SerialType.INT_8;
             }
-            case 3 -> {
+            case 2 -> {
                 return SerialType.INT_16;
             }
-            case 4 -> {
+            case 3 -> {
                 return SerialType.INT_32;
+            }
+            case 4 -> {
+                return SerialType.INT_48;
             }
             case 5 -> {
                 return SerialType.INT_64;
@@ -73,6 +79,9 @@ public class SerialTypeRecord {
         switch (serialType) {
             case 0 -> {
                 return 0;
+            }
+            case 1 -> {
+                return 1;
             }
             case 2 -> {
                 return 2;
