@@ -37,43 +37,60 @@ public class QueryParser {
         return columnNames;
     }
 
+    public List<String> getRequestColumns(List<String> tokens) {
+        List<String> columns = new ArrayList<>();
+        if (tokens.getFirst().equals("select")) {
+            int i = 1;
+            while (i < tokens.size() && !Objects.equals(tokens.get(i), "from")) {
+                columns.add(tokens.get(i).split(",")[0]);
+                i += 1;
+            }
+        }
+        return columns;
+    }
+
     public String parse(String query) throws Exception {
         List<SchemaTable> schemaTables = Parser.covertCellsToSchemaTable(databaseFile);
         System.err.println("schemaTables" + schemaTables);
-        List<String> tokens = Arrays.stream(query.split(" ")).toList();
-        String tableName = tokens.getLast();
+        List<String> tokens = Arrays.stream(query.toLowerCase().split(" ")).toList();
+        List<String> requestColumns = getRequestColumns(tokens);
+        String tableName = tokens.getLast().trim();
         int pageSize = databaseFile.getDatabaseHeader().getPageSize();
         schemareader.SchemaTable table = schemaTables.stream().filter(schemaTable -> schemaTable.getName().equals(tableName))
                 .toList()
                 .getFirst();
 
-        Integer rootPageNumber = table.getRootPage();
+        int rootPageNumber = table.getRootPage();
         List<String> columns = getColumnNames(table.getSql());
 
         System.err.println("Page number for table " + tableName + "=" + rootPageNumber);
-        System.err.println("columns" + columns);
+        System.err.println("columns" + columns + " " + tokens.get(1));
         FileInputStream newDatabaseFilePtr = new FileInputStream(this.filePath);
         if (tokens.get(1).toLowerCase().contains("count")) {
             return String.valueOf(Parser.countRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize));
-        } else if (columns.contains(tokens.get(1).toLowerCase())) {
+        } else {
             List<TableBtreeCell> cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
             List<Integer> indexes = new ArrayList<>();
-            for (String requestColumn: tokens.get(1).split(",")) {
-                int index = columns.indexOf(requestColumn.toLowerCase());
+            for (String requestColumn: requestColumns) {
+                int index = columns.indexOf(requestColumn.trim().toLowerCase());
                 indexes.add(index);
             }
-            String result = "";
+            System.err.println("indexes" + indexes + " " + requestColumns);
+            StringBuilder result = new StringBuilder();
             for (TableBtreeCell cell: cells) {
                 List<Object> retrivedColumns = cell.getRecord().getRecordBody().getBody();
                 for (int index: indexes) {
                     // because id is always part of columns
-                    result = result + retrivedColumns.get(index - 1) + "|";
+                    result.append(retrivedColumns.get(index - 1));
+                    result.append("|");
                 }
-                result = result.replaceAll("|$", "") + "\n";
+                if (!result.isEmpty()) {
+                    result.deleteCharAt(result.length() - 1);
+                }
+                result.append("\n");
             }
-            System.err.println("result" + result);
-            return result;
+            System.err.println("result" + result.toString());
+            return result.toString();
         }
-        return null;
     }
 }
