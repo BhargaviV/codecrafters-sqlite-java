@@ -57,14 +57,21 @@ public class QueryParser {
             return String.valueOf(Parser.countRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize));
         } else if (columns.contains(tokens.get(1).toLowerCase())) {
             List<TableBtreeCell> cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
-            int index = columns.indexOf(tokens.get(1).toLowerCase());
+            List<Integer> indexes = new ArrayList<>();
+            for (String requestColumn: tokens.get(1).split(",")) {
+                int index = columns.indexOf(requestColumn.toLowerCase());
+                indexes.add(index);
+            }
             String result = "";
             for (TableBtreeCell cell: cells) {
                 List<Object> retrivedColumns = cell.getRecord().getRecordBody().getBody();
-                // because id is always part of columns
-                result = result + retrivedColumns.get(index - 1) + "\n";
+                for (int index: indexes) {
+                    // because id is always part of columns
+                    result = result + retrivedColumns.get(index - 1) + "|";
+                }
+                result = result.replaceAll("|$", "") + "\n";
             }
-//            System.out.println("result" + result);
+            System.err.println("result" + result);
             return result;
         }
         return null;
