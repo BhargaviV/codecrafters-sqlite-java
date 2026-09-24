@@ -1,4 +1,4 @@
-import parser.QueryParser;
+import parser.QueryExecutor;
 import schemareader.SchemaTable;
 import utils.Parser;
 import schemareader.DatabaseFile;
@@ -34,8 +34,8 @@ void main(String[] args) throws Exception {
         }
         default -> {
             if (command.toLowerCase().contains("select")) {
-                QueryParser parser = new QueryParser(databaseFile, databaseFilePath);
-                IO.println(parser.parse(command));
+                QueryExecutor parser = new QueryExecutor(databaseFile, databaseFilePath);
+                IO.println(parser.execute(command));
             } else {
                 IO.println("Missing or invalid command passed: " + command);
             }

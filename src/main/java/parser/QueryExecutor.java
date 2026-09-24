@@ -9,17 +9,21 @@ import java.io.FileInputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-public class QueryParser {
+public class QueryExecutor {
 
     DatabaseFile databaseFile;
     String filePath;
+    List<SchemaTable> schemaTables;
 
     Set<String> constraintIdentifier = Set.of("PRIMARY", "FOREIGN", "CHECK", "UNIQUE");
 
-    public QueryParser(DatabaseFile databaseFile, String filePath) {
+    public QueryExecutor(DatabaseFile databaseFile, String filePath) {
         this.databaseFile = databaseFile;
         this.filePath = filePath;
+        this.schemaTables = Parser.covertCellsToSchemaTable(databaseFile);
     }
     
     public List<String> getColumnNames(String sql) {
@@ -37,24 +41,24 @@ public class QueryParser {
         return columnNames;
     }
 
-    public List<String> getRequestColumns(List<String> tokens) {
-        List<String> columns = new ArrayList<>();
-        if (tokens.getFirst().equals("select")) {
-            int i = 1;
-            while (i < tokens.size() && !Objects.equals(tokens.get(i), "from")) {
-                columns.add(tokens.get(i).split(",")[0]);
-                i += 1;
+    List<Integer> getColumnIndexes(List<String> tableDefinedColumn, List<String> requestColumns) {
+        List<Integer> indexes = new ArrayList<>();
+        for (String requestColumn: requestColumns) {
+            String tableName = requestColumn.trim().toLowerCase();
+            int index = tableDefinedColumn.indexOf(tableName);
+            if (index == -1) {
+                continue;
             }
+            indexes.add(index);
         }
-        return columns;
+        System.err.println("getColumnIndexes" + indexes);
+        return indexes;
     }
 
-    public String parse(String query) throws Exception {
-        List<SchemaTable> schemaTables = Parser.covertCellsToSchemaTable(databaseFile);
+    public String execute(String query) throws Exception {
         System.err.println("schemaTables" + schemaTables);
-        List<String> tokens = Arrays.stream(query.toLowerCase().split(" ")).toList();
-        List<String> requestColumns = getRequestColumns(tokens);
-        String tableName = tokens.getLast().trim();
+        Query parsedQuery = new Query(query).parse();
+        String tableName = parsedQuery.getTables().getFirst();
         int pageSize = databaseFile.getDatabaseHeader().getPageSize();
         schemareader.SchemaTable table = schemaTables.stream().filter(schemaTable -> schemaTable.getName().equals(tableName))
                 .toList()
@@ -62,21 +66,24 @@ public class QueryParser {
 
         int rootPageNumber = table.getRootPage();
         List<String> columns = getColumnNames(table.getSql());
+        List<Integer> indexes = parsedQuery.getColumnIndexes(columns);
+        Map<String, Integer> columnIndexMap = new HashMap<>();
+        System.err.println("columns" + columns + "indexes" + indexes);
+        for (int i = 0; i < columns.size(); i ++) {
+            columnIndexMap.put(columns.get(i), i);
+        }
 
-        System.err.println("Page number for table " + tableName + "=" + rootPageNumber);
-        System.err.println("columns" + columns + " " + tokens.get(1));
         FileInputStream newDatabaseFilePtr = new FileInputStream(this.filePath);
-        if (tokens.get(1).toLowerCase().contains("count")) {
+        if (parsedQuery.isCountQuery()) {
             return String.valueOf(Parser.countRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize));
         } else {
             List<TableBtreeCell> cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
-            List<Integer> indexes = new ArrayList<>();
-            for (String requestColumn: requestColumns) {
-                int index = columns.indexOf(requestColumn.trim().toLowerCase());
-                indexes.add(index);
-            }
-            System.err.println("indexes" + indexes + " " + requestColumns);
+
+            System.err.println("indexes" + indexes + " " + parsedQuery.getColumnList());
             StringBuilder result = new StringBuilder();
+
+            cells = parsedQuery.applyCondition(cells, columnIndexMap);
+
             for (TableBtreeCell cell: cells) {
                 List<Object> retrivedColumns = cell.getRecord().getRecordBody().getBody();
                 for (int index: indexes) {
