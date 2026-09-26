@@ -23,9 +23,9 @@ public class RecordHeader {
         recordHeader.setSize(Parser.readSQLiteVarint(databaseFile));
         int totalSize = Math.toIntExact(recordHeader.getSize());
         totalSize -= 1; // because header size is with size
-        System.err.println("schemareader.RecordHeader.parse " +  recordHeader);
+//        System.err.println("schemareader.RecordHeader.parse " +  recordHeader);
 
-        System.err.println("schemareader.RecordHeader.parse totalSize" +  totalSize);
+//        System.err.println("schemareader.RecordHeader.parse totalSize" +  totalSize);
         List<SerialTypeRecord> serialTypes = new ArrayList<>();
         while (totalSize > 0) {
             SerialTypeRecord typeRecord = SerialTypeRecord.parse(databaseFile);
@@ -33,7 +33,7 @@ public class RecordHeader {
             totalSize -= typeRecord.getBytesRead();
         }
         recordHeader.setSerialTypeCodes(serialTypes);
-        System.err.println("schemareader.RecordHeader.parse after " +  recordHeader);
+//        System.err.println("schemareader.RecordHeader.parse after " +  serialTypes);
         return recordHeader;
     }
 }

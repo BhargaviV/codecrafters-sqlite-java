@@ -19,16 +19,20 @@ public class Equal implements Condition {
         System.err.println("apply" + columnIndexes+ "\n" + "condition" + condition);
         List<TableBtreeCell> filtered = new ArrayList<>();
         for (TableBtreeCell cell: cells) {
-            List<Object> retrivedColumns = cell.getRecord().getRecordBody().getBody();
+            List<Object> retrievedColumns = cell.getRecord().getRecordBody().getBody();
+            System.err.println("retrievedColumns" + retrievedColumns);
 
             boolean isTrue = true;
-            for(String columnName: condition.keySet()) {
-                int columnIndex = columnIndexes.get(columnName.trim());
-                String actualValue = retrivedColumns.get(columnIndex - 1).toString();
-                System.err.println("columnName" + columnName + columnIndexes.get(columnName.trim()) +
-                        "actualValue" + actualValue +
-                        "condition.get(columnName).replace(\"'\", \"\")" + condition.get(columnName).replace("'", "").trim());
-                if (!actualValue.equals(condition.get(columnName).replace("'", "").trim())) {
+            for(Map.Entry<String, String> columnName: condition.entrySet()) {
+                // Id is present in the row id column
+                retrievedColumns.set(0, cell.getRowId());
+                cell.getRecord().getRecordBody().setBody(retrievedColumns);
+                int columnIndex = columnIndexes.get(columnName.getKey().trim());
+                String actualValue = retrievedColumns.get(columnIndex).toString();
+//                System.err.println("columnName" + columnName + columnIndexes.get(columnName.trim()) +
+//                        "actualValue" + actualValue +
+//                        "condition.get(columnName).replace(\"'\", \"\")" + condition.get(columnName).replace("'", "").trim());
+                if (!actualValue.equals(columnName.getValue().replace("'", "").trim())) {
                     isTrue = false;
                     break;
                 }

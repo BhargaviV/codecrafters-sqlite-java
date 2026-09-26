@@ -24,7 +24,10 @@ public class BtreePageHeader {
     public static BtreePageHeader parse(FileInputStream databaseFile) throws IOException {
         BtreePageHeader btreePageHeader = new BtreePageHeader();
         btreePageHeader.setBtreePageType(PageType.getPageType(databaseFile.read()));
-        System.err.println("remaining" + databaseFile.available());
+        if (databaseFile.available() == 0) {
+            return btreePageHeader;
+        }
+        System.err.println("remaining" + databaseFile.available() + "pagetype" + btreePageHeader.getBtreePageType());
         btreePageHeader.setFirstFreeBlock(ByteBuffer.wrap(databaseFile.readNBytes(2)).getShort());
         btreePageHeader.setNumberOfCells(ByteBuffer.wrap(databaseFile.readNBytes(2)).getShort());
         btreePageHeader.setStartOfCellContent(ByteBuffer.wrap(databaseFile.readNBytes(2)).getShort());

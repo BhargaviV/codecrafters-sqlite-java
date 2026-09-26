@@ -30,6 +30,8 @@ public class RecordBody {
                 objects.add(s);
             } else if (serialTypeRecord.getSerialType().equals(SerialTypeRecord.SerialType.INT_8)) {
                 objects.add((int) byteBuffer.get());
+            } else {
+                objects.add("");
             }
         }
         recordBody.setBody(objects);

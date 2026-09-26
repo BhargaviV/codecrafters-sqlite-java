@@ -55,10 +55,10 @@ public class Parser {
         List<TableBtreeCell> tableBtreeCells = new ArrayList<>();
         for (Integer cellOffset: cellOffsets) {
             long absoluteCellOffset = pageOffset + cellOffset;
-            System.err.println(
-                    "cellOffset=" + cellOffset +
-                            ", absolute=" + absoluteCellOffset
-            );
+//            System.err.println(
+//                    "cellOffset=" + cellOffset +
+//                            ", absolute=" + absoluteCellOffset
+//            );
             databaseFileStream.getChannel().position(absoluteCellOffset);
             tableBtreeCells.add(TableBtreeCell.parse(databaseFileStream));
         }
@@ -104,33 +104,47 @@ public class Parser {
     static List<TableBtreeCell> traverseInteriorPage(FileInputStream databaseFile, BtreePageHeader header,
                                                      int pageNumber, int pageSize) throws IOException {
         List<TableBtreeCell> cells = new ArrayList<>();
+        List<Integer> cellOffsets = new ArrayList<>();
         for (int i = 0; i < header.getNumberOfCells(); i++) {
             int cellOffset = readUnsignedShort(databaseFile);
+            cellOffsets.add(cellOffset);
+        }
+
+        for (int cellOffset: cellOffsets) {
             long cellAbsoluteOffset = (pageNumber - 1L) * pageSize + cellOffset;
             databaseFile.getChannel().position(cellAbsoluteOffset);
-            int leftChildPage = databaseFile.read() & 0xFF;
+            int leftChildPage = ByteBuffer
+                    .wrap(databaseFile.readNBytes(4))
+                    .getInt();
             Parser.readSQLiteVarint(databaseFile); // separator rowid
             cells.addAll(traverseRowsOnPage(databaseFile, leftChildPage, pageSize));
         }
         cells.addAll(traverseRowsOnPage(databaseFile, header.getRightMostPointer(), pageSize));
+//        System.err.println("cells traverseInteriorPage" + cells);
         return cells;
     }
 
     public static List<TableBtreeCell> traverseRowsOnPage(FileInputStream databaseFile, int pageNumber, int pageSize) throws IOException {
-        long pageOffset = (pageNumber - 1L) * pageSize;
+        long pageOffset = Math.max(0, (pageNumber - 1L) * pageSize);
+        System.err.println("pageSize" + pageSize + "pageNumber" + pageNumber + " ");
         databaseFile.getChannel().position(pageOffset);
         BtreePageHeader header = BtreePageHeader.parse(databaseFile);
-        System.err.println("header" + header);
+
         if (header.getBtreePageType() == PageType.TABLE_LEAF) {
             List<TableBtreeCell> cells = parseBtreeLeaf(databaseFile, header, pageNumber, pageSize);
-            System.err.println("traverseRowsOnPage" + cells);
+//            System.err.println("traverseRowsOnPage" + cells);
             System.err.println("traverseRowsOnPage totalsize" + cells.size());
             return cells;
         }
 
         if (header.getBtreePageType() == PageType.TABLE_INTERNAL) {
+            System.err.println("TABLE_INTERNAL" + header);
             List<TableBtreeCell> tableBtreeCells = new ArrayList<>(traverseInteriorPage(databaseFile, header, pageNumber, pageSize));
             return tableBtreeCells;
+        }
+
+        if (header.getBtreePageType() == null) {
+            return List.of();
         }
 
         throw new IllegalStateException(

@@ -9,8 +9,6 @@ import java.io.FileInputStream;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 public class QueryExecutor {
 
@@ -41,20 +39,6 @@ public class QueryExecutor {
         return columnNames;
     }
 
-    List<Integer> getColumnIndexes(List<String> tableDefinedColumn, List<String> requestColumns) {
-        List<Integer> indexes = new ArrayList<>();
-        for (String requestColumn: requestColumns) {
-            String tableName = requestColumn.trim().toLowerCase();
-            int index = tableDefinedColumn.indexOf(tableName);
-            if (index == -1) {
-                continue;
-            }
-            indexes.add(index);
-        }
-        System.err.println("getColumnIndexes" + indexes);
-        return indexes;
-    }
-
     public String execute(String query) throws Exception {
         System.err.println("schemaTables" + schemaTables);
         Query parsedQuery = new Query(query).parse();
@@ -79,7 +63,7 @@ public class QueryExecutor {
         } else {
             List<TableBtreeCell> cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
 
-            System.err.println("indexes" + indexes + " " + parsedQuery.getColumnList());
+            System.err.println("parsedQuery" + parsedQuery);
             StringBuilder result = new StringBuilder();
 
             cells = parsedQuery.applyCondition(cells, columnIndexMap);
@@ -88,7 +72,7 @@ public class QueryExecutor {
                 List<Object> retrivedColumns = cell.getRecord().getRecordBody().getBody();
                 for (int index: indexes) {
                     // because id is always part of columns
-                    result.append(retrivedColumns.get(index - 1));
+                    result.append(retrivedColumns.get(index));
                     result.append("|");
                 }
                 if (!result.isEmpty()) {

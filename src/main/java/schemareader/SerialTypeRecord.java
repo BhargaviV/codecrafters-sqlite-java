@@ -61,6 +61,8 @@ public class SerialTypeRecord {
             }
             case 5 -> {
                 return SerialType.INT_64;
+            } case 8, 9 -> {
+                return SerialType.INT_64;
             }
             default -> {
                 if (serialType >= 13 && serialType % 2 == 1) {
@@ -94,6 +96,10 @@ public class SerialTypeRecord {
             }
             case 5 -> {
                 return 5;
+            } case 8 -> {
+                return 8;
+            } case 9 -> {
+                return 9;
             }
             default -> {
                 if (serialType >= 13 && serialType % 2 == 1) {

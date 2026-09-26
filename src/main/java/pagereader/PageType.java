@@ -16,6 +16,7 @@ public enum PageType {
                 return TABLE_LEAF;
             }
         }
+        System.err.println("getPageType" + value);
         return null;
     }
 }
