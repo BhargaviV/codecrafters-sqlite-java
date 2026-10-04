@@ -97,7 +97,7 @@ public class QueryExecutor {
                 }
                 result.append("\n");
             }
-            System.err.println("result" + result.toString());
+//            System.err.println("result" + result.toString());
             return result.toString();
         }
     }
