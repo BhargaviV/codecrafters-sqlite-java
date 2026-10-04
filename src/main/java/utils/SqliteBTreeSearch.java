@@ -3,8 +3,6 @@ package utils;
 import java.util.List;
 
 public class SqliteBTreeSearch {
-
-    // A helper method to handle the strict SQLite collation hierarchy
     public static int compareSqliteValues(Object cellValue, Object searchKey) {
         if (cellValue instanceof String strKey) {
             if (strKey.startsWith("'") && strKey.endsWith("'")) {
@@ -12,8 +10,6 @@ public class SqliteBTreeSearch {
             }
         }
         if (cellValue == searchKey) return 0;
-
-        // 1. Handle SQLite NULL / empty string placeholders (always lowest)
         boolean cellIsNull = (cellValue == null || "".equals(cellValue));
         boolean keyIsNull = (searchKey == null || "".equals(searchKey));
 
@@ -21,7 +17,6 @@ public class SqliteBTreeSearch {
         if (!cellIsNull && keyIsNull) return 1;
         if (cellIsNull && keyIsNull) return 0;
 
-        // 2. Handle numeric types vs strings (numbers are always lowest)
         boolean cellIsNum = cellValue instanceof Number;
         boolean keyIsNum = searchKey instanceof Number;
 
@@ -31,7 +26,6 @@ public class SqliteBTreeSearch {
         if (cellIsNum && keyIsNum) {
             return Long.compare(((Number) cellValue).longValue(), ((Number) searchKey).longValue());
         } else {
-            // 3. String alphabetical comparison
             return cellValue.toString().trim().compareTo(searchKey.toString().trim());
         }
     }

@@ -4,6 +4,7 @@ import schemareader.DatabaseFile;
 import schemareader.SchemaTable;
 import schemareader.TableBtreeCell;
 import schemareader.TableIndexCell;
+import utils.BtreeParser;
 import utils.IndexParser;
 import utils.Parser;
 
@@ -62,24 +63,22 @@ public class QueryExecutor {
             return String.valueOf(Parser.countRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize));
         } else {
 
-            List<TableBtreeCell> cells;
-            if (!parsedQuery.getConditionList().isEmpty()) {
+            List<TableBtreeCell> cells = List.of();
+            if (parsedQuery.getConditionList().isEmpty()) {
+                cells = BtreeParser.traverseAllRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
+                cells = parsedQuery.applyCondition(cells, columnIndexMap);
+            } else {
                 List<TableIndexCell> indexCells = IndexParser.findIndexPage(newDatabaseFilePtr,
                         schemaTables, parsedQuery,
                         pageSize);
 
                 if (indexCells == null || indexCells.isEmpty()) {
-                    cells = Parser.traverseAllRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
+                    cells = BtreeParser.traverseAllRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
                     cells = parsedQuery.applyCondition(cells, columnIndexMap);
                 } else {
-                    cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, indexCells, rootPageNumber, pageSize);
-//                    System.err.println("cells" + cells);
+                    cells = BtreeParser.traverseRowsOnPage(newDatabaseFilePtr, indexCells, rootPageNumber, pageSize);
                 }
-            } else {
-                cells = Parser.traverseAllRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
-                cells = parsedQuery.applyCondition(cells, columnIndexMap);
             }
-
             System.err.println("parsedQuery" + parsedQuery);
             StringBuilder result = new StringBuilder();
 
@@ -88,7 +87,6 @@ public class QueryExecutor {
                 retrivedColumns.set(0, cell.getRowId());
                 cell.getRecord().getRecordBody().setBody(retrivedColumns);
                 for (int index: indexes) {
-                    // because id is always part of columns
                     result.append(retrivedColumns.get(index));
                     result.append("|");
                 }
@@ -97,7 +95,6 @@ public class QueryExecutor {
                 }
                 result.append("\n");
             }
-//            System.err.println("result" + result.toString());
             return result.toString();
         }
     }
