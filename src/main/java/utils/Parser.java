@@ -263,7 +263,7 @@ public class Parser {
                                                           List<TableIndexCell> indexCells,
                                                           int pageNumber,
                                                           int pageSize) throws IOException {
-        Set<Long> rowIds = indexCells.stream().map(tableIndexCell -> tableIndexCell.getTableIndexRecord().getRowId()).collect(Collectors.toSet());
+        List<Long> rowIds = indexCells.stream().map(tableIndexCell -> tableIndexCell.getTableIndexRecord().getRowId()).toList();
         List<TableBtreeCell> cells = new ArrayList<>();
         for (Long rowId: rowIds) {
             TableBtreeCell cell = getBtreeCells(rowId, pageNumber, pageSize, databaseFile);
