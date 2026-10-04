@@ -83,7 +83,8 @@ public class BtreeParser extends Parser {
 //        System.err.println("cekks" + cells);
         System.err.println("getBtreeCells" +
                 cells.stream().map(cell -> cell.getRecord().getRecordBody().getBody().get(7)).collect(Collectors.toSet())
-                + "size " + cells.size());
+                + "size " + cells.size()
+        + " indexCells = " + indexCells.size());
 
         // for each rowId find the row in btree
         return cells;
