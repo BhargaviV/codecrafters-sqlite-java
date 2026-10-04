@@ -36,6 +36,7 @@ public class DatabaseFile {
          */
 
         databaseFile.setCells(Parser.parseBtreeLeaf(databaseFileStream, btreePageHeader, 0, 0));
+//        System.err.println("database header cells" + databaseFile.getCells());
         return databaseFile;
     }
 }

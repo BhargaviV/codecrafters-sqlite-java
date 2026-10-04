@@ -57,7 +57,6 @@ public class Query {
                 for (String conditionString : matcher.group("where").split("\\s*\\b(?:or|and)\\b\\s*")) {
                     HashMap<String, String> conditionMap = new HashMap<>();
                     String[] stringCondition = conditionString.split("=");
-                    System.err.println("conditionString" + conditionString);
                     conditionMap.put(stringCondition[0].trim(), stringCondition[1].trim());
                     Condition condition = new Equal(conditionMap);
                     conditions.add(condition);

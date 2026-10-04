@@ -15,8 +15,12 @@ public class SerialTypeRecord {
 
     enum SerialType {
         NULL,
+        INT_ZERO,
+        INT_ONE,
+        RESERVED,
         INT_8,
         INT_16,
+        INT_24,
         INT_32,
         INT_48,
         INT_64,
@@ -37,7 +41,6 @@ public class SerialTypeRecord {
         serialTypeRecord.setSize(getSize((int) (value)));
         serialTypeRecord.setSerialType(getSerialType((int) value));
         serialTypeRecord.setBytesRead((int) (after - before));
-
         return serialTypeRecord;
     }
 
@@ -54,61 +57,78 @@ public class SerialTypeRecord {
                 return SerialType.INT_16;
             }
             case 3 -> {
-                return SerialType.INT_32;
+                return SerialType.INT_24;
             }
             case 4 -> {
-                return SerialType.INT_48;
+                return SerialType.INT_32;
             }
             case 5 -> {
-                return SerialType.INT_64;
-            } case 8, 9 -> {
+                return SerialType.INT_48;
+            }
+            case 6 -> {
                 return SerialType.INT_64;
             }
+            case 7 -> {
+                return SerialType.FLOAT_64;
+            }
+            case 8 -> {
+                return SerialType.INT_ZERO;
+            }
+            case 9 -> {
+                return SerialType.INT_ONE;
+            }
             default -> {
+                if (serialType >= 12 && serialType % 2 == 0) {
+                    return SerialType.BLOB;
+                }
                 if (serialType >= 13 && serialType % 2 == 1) {
                     return SerialType.STRING;
                 }
-                if (serialType >= 12) {
-                    return SerialType.BLOB;
-                }
+                return SerialType.RESERVED;
             }
         }
 
-        return SerialType.NULL;
     }
 
     public static int getSize(int serialType) {
         switch (serialType) {
             case 0 -> {
-                return 0;
+                return 0; // NULL
             }
             case 1 -> {
-                return 1;
+                return 1; // INTEGER
             }
             case 2 -> {
-                return 2;
+                return 2; // INTEGER
             }
             case 3 -> {
-                return 3;
+                return 3; // INTEGER
             }
             case 4 -> {
-                return 4;
+                return 4; // INTEGER
             }
             case 5 -> {
-                return 5;
-            } case 8 -> {
-                return 8;
-            } case 9 -> {
-                return 9;
+                return 6; // INTEGER
+            }
+            case 6 -> {
+                return 8; // INTEGER
+            }
+            case 7 -> {
+                return 8; // FLOAT
+            }
+            case 8, 9 -> {
+                return 0; // constants 0 and 1
             }
             default -> {
+
                 if (serialType >= 13 && serialType % 2 == 1) {
-                    return (serialType - 13) / 2;
+                    return (serialType - 13) / 2; // TEXT
                 }
-                else if (serialType >= 12) {
-                    return (serialType - 12) / 2;
+                if (serialType >= 12 && serialType % 2 == 0) {
+                    return (serialType - 12) / 2; // BLOB
                 }
-                return 0;
+
+                return 0; // reserved 10, 11
             }
         }
     }

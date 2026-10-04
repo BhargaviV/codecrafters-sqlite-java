@@ -27,12 +27,11 @@ public class BtreePageHeader {
         if (databaseFile.available() == 0) {
             return btreePageHeader;
         }
-        System.err.println("remaining" + databaseFile.available() + "pagetype" + btreePageHeader.getBtreePageType());
         btreePageHeader.setFirstFreeBlock(ByteBuffer.wrap(databaseFile.readNBytes(2)).getShort());
         btreePageHeader.setNumberOfCells(ByteBuffer.wrap(databaseFile.readNBytes(2)).getShort());
         btreePageHeader.setStartOfCellContent(ByteBuffer.wrap(databaseFile.readNBytes(2)).getShort());
         btreePageHeader.setFragmentedFreeCells(ByteBuffer.wrap(databaseFile.readNBytes(1)).get());
-        if(btreePageHeader.getBtreePageType() == PageType.TABLE_INTERNAL) {
+        if(btreePageHeader.getBtreePageType() == PageType.TABLE_INTERNAL || btreePageHeader.btreePageType == PageType.INDEX_INTERNAL) {
             btreePageHeader.setRightMostPointer(ByteBuffer.wrap(databaseFile.readNBytes(4)).getInt());
         }
 

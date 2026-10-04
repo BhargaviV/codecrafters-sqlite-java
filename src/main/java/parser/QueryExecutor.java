@@ -3,6 +3,8 @@ package parser;
 import schemareader.DatabaseFile;
 import schemareader.SchemaTable;
 import schemareader.TableBtreeCell;
+import schemareader.TableIndexCell;
+import utils.IndexParser;
 import utils.Parser;
 
 import java.io.FileInputStream;
@@ -44,9 +46,7 @@ public class QueryExecutor {
         Query parsedQuery = new Query(query).parse();
         String tableName = parsedQuery.getTables().getFirst();
         int pageSize = databaseFile.getDatabaseHeader().getPageSize();
-        schemareader.SchemaTable table = schemaTables.stream().filter(schemaTable -> schemaTable.getName().equals(tableName))
-                .toList()
-                .getFirst();
+        schemareader.SchemaTable table = Parser.findSchemaPage(schemaTables, tableName);
 
         int rootPageNumber = table.getRootPage();
         List<String> columns = getColumnNames(table.getSql());
@@ -61,15 +61,32 @@ public class QueryExecutor {
         if (parsedQuery.isCountQuery()) {
             return String.valueOf(Parser.countRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize));
         } else {
-            List<TableBtreeCell> cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
+
+            List<TableBtreeCell> cells;
+            if (!parsedQuery.getConditionList().isEmpty()) {
+                List<TableIndexCell> indexCells = IndexParser.findIndexPage(newDatabaseFilePtr,
+                        schemaTables, parsedQuery,
+                        pageSize);
+
+                if (indexCells == null || indexCells.isEmpty()) {
+                    cells = Parser.traverseAllRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
+                    cells = parsedQuery.applyCondition(cells, columnIndexMap);
+                } else {
+                    cells = Parser.traverseRowsOnPage(newDatabaseFilePtr, indexCells, rootPageNumber, pageSize);
+//                    System.err.println("cells" + cells);
+                }
+            } else {
+                cells = Parser.traverseAllRowsOnPage(newDatabaseFilePtr, rootPageNumber, pageSize);
+                cells = parsedQuery.applyCondition(cells, columnIndexMap);
+            }
 
             System.err.println("parsedQuery" + parsedQuery);
             StringBuilder result = new StringBuilder();
 
-            cells = parsedQuery.applyCondition(cells, columnIndexMap);
-
             for (TableBtreeCell cell: cells) {
                 List<Object> retrivedColumns = cell.getRecord().getRecordBody().getBody();
+                retrivedColumns.set(0, cell.getRowId());
+                cell.getRecord().getRecordBody().setBody(retrivedColumns);
                 for (int index: indexes) {
                     // because id is always part of columns
                     result.append(retrivedColumns.get(index));

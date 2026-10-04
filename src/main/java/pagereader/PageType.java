@@ -15,6 +15,12 @@ public enum PageType {
             case 0x0D -> {
                 return TABLE_LEAF;
             }
+            case 0x0A -> {
+                return INDEX_LEAF;
+            }
+            case 0x02 -> {
+                return INDEX_INTERNAL;
+            }
         }
         System.err.println("getPageType" + value);
         return null;

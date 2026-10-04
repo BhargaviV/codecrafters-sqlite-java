@@ -11,7 +11,7 @@ import java.io.IOException;
 @Setter
 @Getter
 @ToString
-public class TableBtreeCell {
+public class TableBtreeCell implements BtreeCell {
 
     /*
     A varint which is the total number of bytes of payload, including any overflow
@@ -26,11 +26,9 @@ public class TableBtreeCell {
 
     public static TableBtreeCell parse(FileInputStream databaseFile) throws IOException {
         TableBtreeCell tableBtreeCell = new TableBtreeCell();
-//        System.out.println("schemareader.TableBtreeCell.parse");
         tableBtreeCell.setRecordSize(Parser.readSQLiteVarint(databaseFile));
         tableBtreeCell.setRowId(Parser.readSQLiteVarint(databaseFile));
         tableBtreeCell.setRecord(Record.parse(databaseFile));
-//        System.out.println("schemareader.TableBtreeCell.parse" +  tableBtreeCell);
         return tableBtreeCell;
     }
 }
