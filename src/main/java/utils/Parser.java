@@ -167,7 +167,7 @@ public class Parser {
 
         if (header.getBtreePageType() == PageType.TABLE_LEAF) {
             List<TableBtreeCell> cells = parseBtreeLeaf(databaseFile, header, pageNumber, pageSize);
-            System.err.println("traverseAllRowsOnPage totalsize" + cells.size());
+//            System.err.println("traverseAllRowsOnPage totalsize" + cells.size());
             return cells;
         }
 
