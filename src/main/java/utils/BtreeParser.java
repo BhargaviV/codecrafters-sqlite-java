@@ -52,12 +52,12 @@ public class BtreeParser extends Parser {
             }
 
 
-            int index = SqliteBTreeSearch.findLessThanOrEqualTo(rowIds, targetRowId);
+            int index = SqliteBTreeSearch.findGreaterThanOrEqualTo(rowIds, targetRowId);
             int nextPage;
             if (index == -1) {
-                nextPage = pages.getFirst();
-            } else if (index + 1 < rowIds.size()) {
-                nextPage = pages.get(index + 1);
+                nextPage = header.getRightMostPointer();
+            } else if (index < rowIds.size()) {
+                nextPage = pages.get(index);
             } else {
                 nextPage = header.getRightMostPointer();
             }
@@ -73,6 +73,8 @@ public class BtreeParser extends Parser {
                                                           int pageNumber,
                                                           int pageSize) throws IOException {
         List<Long> rowIds = indexCells.stream().map(tableIndexCell -> tableIndexCell.getTableIndexRecord().getRowId()).toList();
+        System.err.println("indexCells" + rowIds);
+        System.err.println("indexCells" + indexCells);
         List<TableBtreeCell> cells = new ArrayList<>();
         for (Long rowId: rowIds) {
             TableBtreeCell cell = getBtreeCells(rowId, pageNumber, pageSize, databaseFile);
@@ -120,14 +122,12 @@ public class BtreeParser extends Parser {
         BtreePageHeader header = BtreePageHeader.parse(databaseFile);
 
         if (header.getBtreePageType() == PageType.TABLE_LEAF) {
-            List<TableBtreeCell> cells = parseBtreeLeaf(databaseFile, header, pageNumber, pageSize);
-//            System.err.println("traverseAllRowsOnPage totalsize" + cells.size());
-            return cells;
+            //            System.err.println("traverseAllRowsOnPage totalsize" + cells.size());
+            return parseBtreeLeaf(databaseFile, header, pageNumber, pageSize);
         }
 
         if (header.getBtreePageType() == PageType.TABLE_INTERNAL) {
-            List<TableBtreeCell> tableBtreeCells = new ArrayList<>(traverseInteriorPage(databaseFile, header, pageNumber, pageSize));
-            return tableBtreeCells;
+            return new ArrayList<>(traverseInteriorPage(databaseFile, header, pageNumber, pageSize));
         }
 
         if (header.getBtreePageType() == null) {

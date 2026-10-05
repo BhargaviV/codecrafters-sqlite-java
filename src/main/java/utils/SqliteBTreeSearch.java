@@ -48,11 +48,6 @@ public class SqliteBTreeSearch {
             Object midKey = keys.get(mid);
 
             int cmp = compareSqliteValues(midKey, searchKey);
-//            System.err.println("----------------------------------------");
-//            System.err.println("Mid Key Class: " + (midKey == null ? "null" : midKey.getClass().getName()));
-//            System.err.println("Mid Key Value: [" + midKey + "]");
-//            System.err.println("Target Value : [" + searchKey + "]");
-//            System.err.println("Cmp Result   : " + cmp);
 
             if (cmp <= 0) {
                 // midKey is LESS THAN or EQUAL to searchKey (e.g., "australia" vs "micronesia")
@@ -64,6 +59,43 @@ public class SqliteBTreeSearch {
                 // This key is too big. We must search left.
                 right = mid - 1;
             }
+        }
+        return ans;
+    }
+
+    public static int findGreaterThanOrEqualTo(List<Object> keys, Object searchKey) {
+        int left = 0;
+        int right = keys.size() - 1;
+        int ans = -1; // Default to -1 if every key on the page is greater than the target
+
+        if (searchKey instanceof String) {
+            String strKey = (String) searchKey;
+            if (strKey.startsWith("'") && strKey.endsWith("'")) {
+                searchKey = strKey.substring(1, strKey.length() - 1).trim();
+            }
+        }
+
+        while (left <= right) {
+            int mid = left + (right - left) / 2;
+            Object midKey = keys.get(mid);
+
+            int cmp = compareSqliteValues(midKey, searchKey);
+
+            if (cmp >= 0) {
+                ans = mid;
+                right = mid - 1;
+            } else {
+                left = mid + 1;
+            }
+
+
+//            System.err.println("----------------------------------------");
+//            System.err.println("Mid Key Class: " + (midKey == null ? "null" : midKey.getClass().getName()));
+//            System.err.println("Mid Key Value: [" + midKey + "]");
+//            System.err.println("Target Value : [" + searchKey + "]");
+//            System.err.println("Cmp Result   : " + cmp);
+//            System.err.println("Ans Result   : " + ans);
+//            System.err.println("Keys size   : " + keys.size());
         }
         return ans;
     }
